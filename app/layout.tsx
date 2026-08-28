@@ -7,7 +7,7 @@ import Footer from "@/components/Footer";
 import StickyMobileCTA from "@/components/StickyMobileCTA";
 import PersistentProjectCTA from "@/components/PersistentProjectCTA";
 import { getSettings } from "@/lib/settings";
-import { siteConfig } from "@/lib/config";
+import { siteConfig } from "@/lib/config"; export const dynamic = "force-dynamic";
 
 const displayFont = Source_Serif_4({
   subsets: ["latin"],
