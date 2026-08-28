@@ -14,7 +14,7 @@ import { sendTelegramLeadAlert } from "@/lib/telegram";
 // the function signatures below are designed to map 1:1 onto it.
 // ----------------------------------------------------------------
 
-const DB_PATH = path.join(process.cwd(), "lib", "mock-store", "leads.json");
+const DB_PATH = path.join(process.cwd(), "storage", "mock-store", "leads.json");
 
 async function readLeads(): Promise<Lead[]> {
   try {

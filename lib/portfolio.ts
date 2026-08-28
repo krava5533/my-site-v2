@@ -24,7 +24,7 @@ export interface PortfolioItem {
   createdAt: string;
 }
 
-const DB_PATH = path.join(process.cwd(), "lib", "mock-store", "portfolio.json");
+const DB_PATH = path.join(process.cwd(), "storage", "mock-store", "portfolio.json");
 
 async function readAll(): Promise<PortfolioItem[]> {
   try {

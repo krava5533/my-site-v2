@@ -13,7 +13,7 @@ export interface AgentLogEntry {
   createdAt: string;
 }
 
-const DB_PATH = path.join(process.cwd(), "lib", "mock-store", "agent-log.json");
+const DB_PATH = path.join(process.cwd(), "storage", "mock-store", "agent-log.json");
 
 async function readAll(): Promise<AgentLogEntry[]> {
   try {

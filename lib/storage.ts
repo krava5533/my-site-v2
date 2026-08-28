@@ -7,7 +7,14 @@ import { MOCK_MODE } from "@/lib/config";
  * FILE STORAGE ABSTRACTION
  * ----------------------------------------------------------------
  * MOCK_MODE / STORAGE_PROVIDER=local: files are written to
- * /public/uploads and served statically.
+ * /storage/uploads (outside /public, alongside /storage/mock-store)
+ * so that a single mounted volume at /storage covers both the JSON
+ * content store and uploaded files — important on hosts (like
+ * Railway's free tier) that only allow one persistent volume per
+ * service. Files are served back out through the
+ * /api/uploads/[filename] route (see app/api/uploads/[filename]/route.ts)
+ * rather than directly from /public.
+ *
  * Swap in S3 / Cloudinary / Vercel Blob by implementing the same
  * `saveFile` signature and switching on STORAGE_PROVIDER.
  * ----------------------------------------------------------------
@@ -33,6 +40,10 @@ export interface StoredFile {
   mimeType: string;
 }
 
+export function uploadsDir() {
+  return path.join(process.cwd(), "storage", "uploads");
+}
+
 export async function saveFile(file: File): Promise<StoredFile> {
   if (file.size > MAX_UPLOAD_SIZE_BYTES) {
     throw new Error(`File exceeds maximum size of ${process.env.MAX_UPLOAD_SIZE_MB || 25}MB`);
@@ -43,13 +54,13 @@ export async function saveFile(file: File): Promise<StoredFile> {
   const safeName = `${nanoid(10)}${ext}`;
 
   if (provider === "local") {
-    const uploadDir = path.join(process.cwd(), "public", "uploads");
-    await fs.mkdir(uploadDir, { recursive: true });
+    const dir = uploadsDir();
+    await fs.mkdir(dir, { recursive: true });
     const buffer = Buffer.from(await file.arrayBuffer());
-    await fs.writeFile(path.join(uploadDir, safeName), buffer);
+    await fs.writeFile(path.join(dir, safeName), buffer);
     return {
       filename: file.name,
-      url: `/uploads/${safeName}`,
+      url: `/api/uploads/${safeName}`,
       size: file.size,
       mimeType: file.type,
     };

@@ -16,7 +16,7 @@ import path from "path";
  */
 
 function storePath(file: string) {
-  return path.join(process.cwd(), "lib", "mock-store", file);
+  return path.join(process.cwd(), "storage", "mock-store", file);
 }
 
 export async function readStore<T>(file: string, seed: () => T[]): Promise<T[]> {

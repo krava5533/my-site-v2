@@ -7,7 +7,15 @@ import Footer from "@/components/Footer";
 import StickyMobileCTA from "@/components/StickyMobileCTA";
 import PersistentProjectCTA from "@/components/PersistentProjectCTA";
 import { getSettings } from "@/lib/settings";
-import { siteConfig } from "@/lib/config"; export const dynamic = "force-dynamic";
+import { siteConfig } from "@/lib/config";
+
+// Force every page in the app to render fresh on each request instead of
+// being cached as static HTML from build time. This is essential here:
+// content (products, settings, testimonials, etc.) is edited live through
+// the admin dashboard and stored in files, not fetched via Next's data
+// cache — without this, admin changes would never appear on the public
+// site until the next full rebuild.
+export const dynamic = "force-dynamic";
 
 const displayFont = Source_Serif_4({
   subsets: ["latin"],

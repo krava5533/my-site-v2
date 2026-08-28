@@ -23,7 +23,7 @@ export interface Testimonial {
   createdAt: string;
 }
 
-const DB_PATH = path.join(process.cwd(), "lib", "mock-store", "testimonials.json");
+const DB_PATH = path.join(process.cwd(), "storage", "mock-store", "testimonials.json");
 
 async function readAll(): Promise<Testimonial[]> {
   try {

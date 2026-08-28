@@ -25,12 +25,10 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# uploads (local mock storage)
-/public/uploads/*
-!/public/uploads/.gitkeep
-
-# mock lead store (contains real submitted lead data in local dev)
-/lib/mock-store/leads.json
+# local persistent data (JSON content store + uploaded files) —
+# lives outside /public and /lib so a single mounted volume at
+# /storage covers everything on hosts that only allow one volume
+/storage/
 
 # prisma
 /prisma/dev.db

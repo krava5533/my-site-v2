@@ -15,7 +15,7 @@ import { MOCK_MODE } from "@/lib/config";
  * ----------------------------------------------------------------
  */
 
-const DB_PATH = path.join(process.cwd(), "lib", "mock-store", "settings.json");
+const DB_PATH = path.join(process.cwd(), "storage", "mock-store", "settings.json");
 
 export interface SiteSettings {
   phone: string;
