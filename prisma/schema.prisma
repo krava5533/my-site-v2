@@ -1,0 +1,163 @@
+// LuxeStone Interiors — production database schema.
+// Used when MOCK_MODE=false. Run `npm run db:push` after setting
+// DATABASE_URL in .env.local, then `npm run db:seed`.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  EDITOR
+}
+
+model User {
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  password  String
+  role      Role     @default(ADMIN)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Collection {
+  id          String    @id @default(cuid())
+  slug        String    @unique
+  name        String
+  tagline     String
+  description String
+  heroImage   String
+  colors      String[]
+  finishes    String[]
+  sizes       String[]
+  applications String[]
+  published   Boolean   @default(true)
+  products    Product[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Material {
+  id           String   @id @default(cuid())
+  slug         String   @unique
+  name         String
+  intro        String
+  characteristics String[]
+  applications String[]
+  care         String[]
+  heroImage    String
+  gallery      String[]
+  published    Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Product {
+  id             String     @id @default(cuid())
+  slug           String     @unique
+  name           String
+  collectionId   String?
+  collection     Collection? @relation(fields: [collectionId], references: [id])
+  material       String
+  color          String
+  finish         String
+  sizes          String[]
+  thicknessMm    Int[]
+  applications   String[]
+  description    String
+  technicalSpecs Json
+  documents      Json
+  images         String[]
+  availability   String
+  featured       Boolean    @default(false)
+  published      Boolean    @default(true)
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+}
+
+model Project {
+  id            String   @id @default(cuid())
+  slug          String   @unique
+  name          String
+  location      String
+  type          String
+  designer      String?
+  architect     String?
+  contractor    String?
+  category      String
+  heroImage     String
+  gallery       String[]
+  description   String
+  materialsUsed String[]
+  productSlugs  String[]
+  published     Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model BlogPost {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  title       String
+  excerpt     String
+  category    String
+  coverImage  String
+  content     String
+  author      String
+  published   Boolean  @default(true)
+  publishedAt DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Asset {
+  id        String   @id @default(cuid())
+  filename  String
+  url       String
+  altText   String?
+  category  String?
+  metadata  Json?
+  createdAt DateTime @default(now())
+}
+
+model Lead {
+  id        String   @id @default(cuid())
+  type      String
+  source    String
+  name      String
+  email     String
+  phone     String?
+  company   String?
+  project   String?
+  location  String?
+  message   String?
+  data      Json
+  files     String[]
+  status    String   @default("NEW")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  notes     LeadNote[]
+}
+
+model LeadNote {
+  id        String   @id @default(cuid())
+  leadId    String
+  lead      Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  text      String
+  createdAt DateTime @default(now())
+}
+
+model AnalyticsEvent {
+  id        String   @id @default(cuid())
+  type      String
+  path      String?
+  entityId  String?
+  metadata  Json?
+  createdAt DateTime @default(now())
+}

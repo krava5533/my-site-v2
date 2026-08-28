@@ -1,0 +1,52 @@
+{
+  "name": "luxestone-interiors",
+  "version": "1.0.0",
+  "private": true,
+  "description": "LuxeStone Interiors Ltd. — premium tile, stone & surfaces website and lead-generation platform",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "typecheck": "tsc --noEmit",
+    "db:generate": "prisma generate",
+    "db:push": "prisma db push",
+    "db:seed": "tsx prisma/seed.ts",
+    "db:studio": "prisma studio"
+  },
+  "dependencies": {
+    "next": "^14.2.15",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "typescript": "^5.5.4",
+    "@types/node": "^20.14.15",
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "tailwindcss": "^3.4.9",
+    "postcss": "^8.4.41",
+    "autoprefixer": "^10.4.20",
+    "framer-motion": "^11.3.24",
+    "zod": "^3.23.8",
+    "@prisma/client": "^5.18.0",
+    "prisma": "^5.18.0",
+    "next-auth": "^4.24.7",
+    "bcryptjs": "^2.4.3",
+    "@types/bcryptjs": "^2.4.6",
+    "resend": "^3.5.0",
+    "nodemailer": "^7.0.7",
+    "@types/nodemailer": "^6.4.15",
+    "lucide-react": "^0.427.0",
+    "clsx": "^2.1.1",
+    "date-fns": "^3.6.0",
+    "sharp": "^0.33.4",
+    "nanoid": "^5.0.7"
+  },
+  "devDependencies": {
+    "eslint": "^8.57.0",
+    "eslint-config-next": "^14.2.15",
+    "tsx": "^4.16.5"
+  },
+  "engines": {
+    "node": ">=18.17.0"
+  }
+}
