@@ -19,7 +19,7 @@ export async function getMaterialBySlug(slug: string): Promise<MaterialPage | un
 }
 
 export interface MaterialInput {
-  MaterialPage["name"];
+  name: MaterialPage["name"];
   intro: string;
   characteristics: string[];
   applications: MaterialPage["applications"];
