@@ -1,6 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
+import ChatWidget from "@/components/ChatWidget";
 
 export default function SiteChrome({
   navbar,
@@ -29,6 +30,7 @@ export default function SiteChrome({
       {footer}
       {sticky}
       {projectCta}
+      <ChatWidget />
     </>
   );
 }

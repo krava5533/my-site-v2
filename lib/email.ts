@@ -78,6 +78,7 @@ export async function sendLeadNotificationEmail(lead: Lead): Promise<void> {
 }
 
 export async function sendCustomerConfirmationEmail(lead: Lead): Promise<void> {
+  if (!lead.email) return; // chat-widget leads may only have a phone number
   await sendEmail({
     to: lead.email,
     subject: `Thank you for contacting ${siteConfig.name}`,

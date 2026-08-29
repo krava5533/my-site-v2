@@ -90,3 +90,56 @@ export async function draftAIReply(input: AgentReplyInput): Promise<string | nul
     return null;
   }
 }
+
+export interface ChatMessage {
+  role: "user" | "assistant";
+  content: string;
+}
+
+const CHAT_SYSTEM_SUFFIX = `
+
+You are running as the on-site chat widget (channel: website chat). Your job is to warmly collect, over a few natural turns, whatever of the following the customer hasn't already given: their name, phone number, project type (kitchen/bathroom/floor/outdoor/other), room size (rough), and timeline. Ask only ONE or two missing things per message — don't interrogate. Once you have at least a name and phone number, tell them a specialist will follow up with a real on-site estimate soon, and stop pressing for more details unless they offer them. Keep every message to 1-3 short sentences.`;
+
+export async function draftChatReply(messages: ChatMessage[]): Promise<string> {
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+
+  if (!apiKey) {
+    return "Thanks! Could you share your name and phone number so a specialist can follow up with a real estimate?";
+  }
+
+  try {
+    const baseSystemPrompt = await buildSystemPrompt();
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": apiKey,
+        "anthropic-version": "2023-06-01",
+      },
+      body: JSON.stringify({
+        model: "claude-sonnet-4-6",
+        max_tokens: 250,
+        system: baseSystemPrompt + CHAT_SYSTEM_SUFFIX,
+        messages: messages.map((m) => ({ role: m.role, content: m.content })),
+      }),
+    });
+
+    if (!res.ok) {
+      console.error("AI agent: Anthropic API error", await res.text());
+      return "Sorry, I'm having trouble right now — could you leave your name and phone number and we'll follow up shortly?";
+    }
+
+    const data = await res.json();
+    const text = data.content?.find((c: { type: string }) => c.type === "text")?.text;
+    return text || "Could you tell me a bit more about your project?";
+  } catch (err) {
+    console.error("AI agent: failed to draft chat reply", err);
+    return "Sorry, I'm having trouble right now — could you leave your name and phone number and we'll follow up shortly?";
+  }
+}
+
+/** Very light-touch phone number detector — good enough to know when to save a lead. */
+export function extractPhoneNumber(text: string): string | null {
+  const match = text.match(/(\+?\d[\d\s().-]{7,}\d)/);
+  return match ? match[0].trim() : null;
+}
