@@ -31,7 +31,7 @@ export interface AgentReplyInput {
 
 async function buildSystemPrompt(): Promise<string> {
   const settings = await getSettings();
-  return `You are a helpful, professional assistant answering customer messages on behalf of ${siteConfig.legalName}, a tile and stone installation contractor.
+  return `You're chatting with customers on behalf of ${siteConfig.legalName}, a tile and stone installation contractor. Talk like a friendly, knowledgeable person on the team would — warm, casual, genuinely helpful. Use contractions, keep it natural, avoid sounding like a form letter or a corporate bot. Short messages, real conversation, not a wall of text.
 
 Business info:
 - Services: professional tile and stone installation for kitchens, bathrooms, floors, and custom residential/commercial projects.
@@ -40,11 +40,11 @@ Business info:
 - Service area: ${settings.address || "not yet provided"}
 
 Guidelines:
-- Be warm, concise, and professional — a few sentences, not an essay.
-- Never invent specific prices, exact availability dates, or guarantees you don't have information for. Offer to schedule a free on-site estimate instead.
+- Be warm and concise — a couple of sentences, not an essay.
+- Never invent specific prices, exact availability dates, or guarantees beyond what you're explicitly given in this conversation. If you're handed a computed ballpark estimate, present that — otherwise offer to schedule a free on-site estimate instead.
 - If the customer wants to book an estimate, direct them to call/email/message directly and confirm someone will follow up.
 - If a message is abusive, spam, or clearly not a customer inquiry, reply with a brief neutral message or no reply at all.
-- Never claim to be human if directly asked — you may say you're the business's assistant.`;
+- If someone directly asks whether you're a real person, be honest that you're the business's assistant — but don't volunteer that unprompted, and otherwise just talk like a normal, friendly human would.`;
 }
 
 export async function draftAIReply(input: AgentReplyInput): Promise<string | null> {
@@ -98,17 +98,50 @@ export interface ChatMessage {
 
 const CHAT_SYSTEM_SUFFIX = `
 
-You are running as the on-site chat widget (channel: website chat). Your job is to warmly collect, over a few natural turns, whatever of the following the customer hasn't already given: their name, phone number, project type (kitchen/bathroom/floor/outdoor/other), room size (rough), and timeline. Ask only ONE or two missing things per message — don't interrogate. Once you have at least a name and phone number, tell them a specialist will follow up with a real on-site estimate soon, and stop pressing for more details unless they offer them. Keep every message to 1-3 short sentences.`;
+You are running as the on-site chat widget (channel: website chat). Your job is to warmly collect, over a few natural turns, whatever of the following the customer hasn't already given: their name, phone number, project type (kitchen/bathroom/floor/outdoor/other), and a rough room size (ask for square footage, or dimensions like "12 by 10", if they haven't mentioned it). Ask only ONE or two missing things per message — don't interrogate, and don't repeat questions they've already answered.
 
-export async function draftChatReply(messages: ChatMessage[]): Promise<string> {
+If the customer shares a photo of their space, take a genuine look at it — the lighting, existing colors, layout, style — and give specific, grounded suggestions: what material (e.g. marble, porcelain, natural stone, quartz, terrazzo, travertine, large-format slabs), color, finish, and layout (e.g. diagonal, large-format to minimize grout lines, book-matched) would suit that particular room. Keep it a few sentences, not a lecture, and make it feel like a real opinion, not a generic list.
+
+If you're given a "Computed estimate" fact below, weave it into your next reply naturally and warmly — present it as a rough ballpark ($X–$Y), and always mention that the final number depends on an in-person visit. Don't do your own math — only use a number you're explicitly handed.
+
+Once you have at least a name and phone number, let them know a specialist will follow up soon to confirm details and book a free on-site visit, and stop pressing for more information unless they offer it. Keep every message to 1-3 short, natural sentences.`;
+
+export interface ChatImage {
+  mediaType: string;
+  data: string; // base64, no "data:image/..;base64," prefix
+}
+
+export async function draftChatReply(
+  messages: ChatMessage[],
+  estimateContext?: string,
+  image?: ChatImage
+): Promise<string> {
   const apiKey = process.env.ANTHROPIC_API_KEY;
 
   if (!apiKey) {
-    return "Thanks! Could you share your name and phone number so a specialist can follow up with a real estimate?";
+    return image
+      ? "Thanks for the photo! Once you share your name and phone number, a specialist can take a closer look and follow up with real suggestions."
+      : "Thanks! Could you share your name and phone number so a specialist can follow up with a real estimate?";
   }
 
   try {
     const baseSystemPrompt = await buildSystemPrompt();
+    const contextBlock = estimateContext ? `\n\nComputed estimate: ${estimateContext}` : "";
+
+    const anthropicMessages = messages.map((m, i) => {
+      const isLast = i === messages.length - 1;
+      if (isLast && image && m.role === "user") {
+        return {
+          role: m.role,
+          content: [
+            { type: "image", source: { type: "base64", media_type: image.mediaType, data: image.data } },
+            { type: "text", text: m.content || "Here's a photo of my space." },
+          ],
+        };
+      }
+      return { role: m.role, content: m.content };
+    });
+
     const res = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
@@ -118,9 +151,9 @@ export async function draftChatReply(messages: ChatMessage[]): Promise<string> {
       },
       body: JSON.stringify({
         model: "claude-sonnet-4-6",
-        max_tokens: 250,
-        system: baseSystemPrompt + CHAT_SYSTEM_SUFFIX,
-        messages: messages.map((m) => ({ role: m.role, content: m.content })),
+        max_tokens: 350,
+        system: baseSystemPrompt + CHAT_SYSTEM_SUFFIX + contextBlock,
+        messages: anthropicMessages,
       }),
     });
 

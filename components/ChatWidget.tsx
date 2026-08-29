@@ -1,17 +1,21 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { MessageCircle, X, Send } from "lucide-react";
+import Image from "next/image";
+import { MessageCircle, X, Send, Paperclip } from "lucide-react";
 
 interface Message {
   role: "user" | "assistant";
   content: string;
+  imagePreview?: string; // local data URL, for display only
 }
 
 const GREETING: Message = {
   role: "assistant",
-  content: "Hi! I can help put together a quick estimate. What's your name, and what project are you working on?",
+  content: "Hey there! Tell me a bit about your project — what room, roughly how big — and I can give you a ballpark idea right away. You can also upload a photo of the space for design suggestions.",
 };
+
+const MAX_IMAGE_MB = 8;
 
 export default function ChatWidget() {
   const [open, setOpen] = useState(false);
@@ -19,27 +23,25 @@ export default function ChatWidget() {
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
   const [leadId, setLeadId] = useState<string | undefined>(undefined);
+  const [photoError, setPhotoError] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [messages, open]);
 
-  async function handleSend(e: React.FormEvent) {
-    e.preventDefault();
-    const text = input.trim();
-    if (!text || sending) return;
-
-    const nextMessages: Message[] = [...messages, { role: "user", content: text }];
-    setMessages(nextMessages);
-    setInput("");
+  async function sendToApi(nextMessages: Message[], image?: { mediaType: string; data: string }) {
     setSending(true);
-
     try {
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: nextMessages, leadId }),
+        body: JSON.stringify({
+          messages: nextMessages.map((m) => ({ role: m.role, content: m.content })),
+          leadId,
+          image,
+        }),
       });
       const json = await res.json();
       if (json.leadId) setLeadId(json.leadId);
@@ -52,6 +54,56 @@ export default function ChatWidget() {
     } finally {
       setSending(false);
     }
+  }
+
+  async function handleSend(e: React.FormEvent) {
+    e.preventDefault();
+    const text = input.trim();
+    if (!text || sending) return;
+
+    const nextMessages: Message[] = [...messages, { role: "user", content: text }];
+    setMessages(nextMessages);
+    setInput("");
+    await sendToApi(nextMessages);
+  }
+
+  function handlePhotoClick() {
+    setPhotoError(null);
+    fileInputRef.current?.click();
+  }
+
+  async function handlePhotoSelected(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = ""; // allow re-selecting the same file later
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      setPhotoError("Please upload an image file.");
+      return;
+    }
+    if (file.size > MAX_IMAGE_MB * 1024 * 1024) {
+      setPhotoError(`Image is too large — please keep it under ${MAX_IMAGE_MB}MB.`);
+      return;
+    }
+
+    const dataUrl: string = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+
+    const [, base64] = dataUrl.split(",");
+    const caption = input.trim() || "Here's a photo of my space — what would you suggest?";
+    setInput("");
+
+    const nextMessages: Message[] = [
+      ...messages,
+      { role: "user", content: caption, imagePreview: dataUrl },
+    ];
+    setMessages(nextMessages);
+
+    await sendToApi(nextMessages, { mediaType: file.type, data: base64 });
   }
 
   return (
@@ -76,6 +128,11 @@ export default function ChatWidget() {
                     m.role === "user" ? "bg-accent text-warmwhite" : "bg-stonebeige/40 text-charcoal"
                   }`}
                 >
+                  {m.imagePreview && (
+                    <div className="relative w-40 h-32 mb-2">
+                      <Image src={m.imagePreview} alt="Uploaded room photo" fill className="object-cover rounded-sm" unoptimized />
+                    </div>
+                  )}
                   {m.content}
                 </div>
               </div>
@@ -87,7 +144,25 @@ export default function ChatWidget() {
             )}
           </div>
 
+          {photoError && <p className="form-error px-3">{photoError}</p>}
+
           <form onSubmit={handleSend} className="border-t border-warmgray/20 p-3 flex gap-2">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handlePhotoSelected}
+            />
+            <button
+              type="button"
+              onClick={handlePhotoClick}
+              disabled={sending}
+              aria-label="Upload a photo"
+              className="border border-warmgray/30 px-2.5 text-charcoal hover:border-accent disabled:opacity-40"
+            >
+              <Paperclip size={16} />
+            </button>
             <input
               value={input}
               onChange={(e) => setInput(e.target.value)}

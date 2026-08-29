@@ -11,6 +11,14 @@ export default function SettingsForm({ initial }: { initial: SiteSettings }) {
     setValues((prev) => ({ ...prev, [key]: value }));
   }
 
+  function setRate(room: keyof SiteSettings["pricing"], field: "low" | "high", value: string) {
+    const num = Number(value) || 0;
+    setValues((prev) => ({
+      ...prev,
+      pricing: { ...prev.pricing, [room]: { ...prev.pricing[room], [field]: num } },
+    }));
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setStatus("saving");
@@ -57,6 +65,39 @@ export default function SettingsForm({ initial }: { initial: SiteSettings }) {
       <div>
         <label className="form-label">Houzz URL</label>
         <input value={values.houzz} onChange={(e) => set("houzz", e.target.value)} className="form-input" />
+      </div>
+
+      <div className="pt-4 border-t border-warmgray/20">
+        <h3 className="font-serif text-lg mb-1">AI Chat Estimate Pricing</h3>
+        <p className="text-xs text-warmgray mb-4">
+          Rough $/sq ft ranges the AI chat widget uses to give visitors a ballpark estimate.
+          These are placeholders — replace with your real pricing.
+        </p>
+        {(["kitchen", "bathroom", "floor", "outdoor", "other"] as const).map((room) => (
+          <div key={room} className="grid grid-cols-3 gap-3 items-center mb-2">
+            <span className="text-sm capitalize">{room}</span>
+            <div>
+              <label className="form-label">Low ($/sq ft)</label>
+              <input
+                type="number"
+                min={0}
+                value={values.pricing[room].low}
+                onChange={(e) => setRate(room, "low", e.target.value)}
+                className="form-input"
+              />
+            </div>
+            <div>
+              <label className="form-label">High ($/sq ft)</label>
+              <input
+                type="number"
+                min={0}
+                value={values.pricing[room].high}
+                onChange={(e) => setRate(room, "high", e.target.value)}
+                className="form-input"
+              />
+            </div>
+          </div>
+        ))}
       </div>
 
       {status === "error" && <p className="form-error">Something went wrong — please try again.</p>}

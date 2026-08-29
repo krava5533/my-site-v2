@@ -17,6 +17,11 @@ import { MOCK_MODE } from "@/lib/config";
 
 const DB_PATH = path.join(process.cwd(), "storage", "mock-store", "settings.json");
 
+export interface PricingRate {
+  low: number;
+  high: number;
+}
+
 export interface SiteSettings {
   phone: string;
   email: string;
@@ -25,6 +30,13 @@ export interface SiteSettings {
   pinterest: string;
   houzz: string;
   linkedin: string;
+  pricing: {
+    kitchen: PricingRate;
+    bathroom: PricingRate;
+    floor: PricingRate;
+    outdoor: PricingRate;
+    other: PricingRate;
+  };
 }
 
 const DEFAULTS: SiteSettings = {
@@ -35,6 +47,13 @@ const DEFAULTS: SiteSettings = {
   pinterest: "",
   houzz: "",
   linkedin: "",
+  pricing: {
+    kitchen: { low: 12, high: 25 },
+    bathroom: { low: 15, high: 30 },
+    floor: { low: 8, high: 18 },
+    outdoor: { low: 10, high: 22 },
+    other: { low: 10, high: 20 },
+  },
 };
 
 export async function getSettings(): Promise<SiteSettings> {
